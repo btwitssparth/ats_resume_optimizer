@@ -1,0 +1,27 @@
+# --- Python / Flask Backend ---
+server/venv/
+server/__pycache__/
+server/app/__pycache__/
+server/app/api/__pycache__/
+server/app/services/__pycache__/
+server/app/utils/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+server/.env
+
+# --- Node / React Frontend (for later) ---
+node_modules/
+dist/
+build/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# --- IDE & OS Files ---
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
