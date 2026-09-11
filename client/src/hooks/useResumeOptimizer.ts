@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { analyzeResume, regenerateResume } from "../services/api";
 
-export function useResumeOptimizer() {
+export function useResumeOptimizer(preloadScanId?: number) {
+  void preloadScanId;
   const { getToken } = useAuth();
   
   const [result, setResult] = useState<any>(null);

@@ -86,3 +86,80 @@ def regenerate_resume():
     except Exception as e:
         print(f"Error during regeneration: {e}")
         return jsonify({"error": f"Regeneration failed: {str(e)}"}), 500
+
+def iso_utc(dt):
+    if dt is None:
+        return None
+    return dt.isoformat().replace("+00:00", "Z") if dt.tzinfo else dt.isoformat() + "Z"
+
+@api_bp.route('/resumes', methods=['GET'])
+@login_required
+def list_resumes():
+    try:
+        resumes = Resume.query.filter_by(user_id=request.current_user.id).order_by(Resume.created_at.desc()).all()
+        result = []
+        for resume in resumes:
+            latest_scan = Scan.query.filter_by(resume_id=resume.id).order_by(Scan.created_at.desc()).first()
+            scan_obj = None
+            if latest_scan:
+                scan_obj = {
+                    "id": latest_scan.id,
+                    "overall_score": latest_scan.overall_score,
+                    "created_at": iso_utc(latest_scan.created_at)
+                }
+            result.append({
+                "id": resume.id,
+                "file_name": resume.file_name,
+                "created_at": iso_utc(resume.created_at),
+                "latest_scan": scan_obj
+            })
+        return jsonify(result), 200
+    except Exception as e:
+        print(f"Error listing resumes: {e}")
+        return jsonify({"error": f"Failed to list resumes: {str(e)}"}), 500
+
+@api_bp.route('/scans', methods=['GET'])
+@login_required
+def list_scans():
+    try:
+        resume_id = request.args.get('resume_id', type=int)
+        query = Scan.query.join(Resume, Scan.resume_id == Resume.id).filter(Resume.user_id == request.current_user.id)
+        if resume_id is not None:
+            query = query.filter(Scan.resume_id == resume_id)
+        scans = query.order_by(Scan.created_at.desc()).all()
+        result = []
+        for scan in scans:
+            result.append({
+                "id": scan.id,
+                "resume_id": scan.resume_id,
+                "overall_score": scan.overall_score,
+                "missing_keywords": scan.missing_keywords,
+                "suggested_edits": scan.suggested_edits,
+                "created_at": iso_utc(scan.created_at)
+            })
+        return jsonify(result), 200
+    except Exception as e:
+        print(f"Error listing scans: {e}")
+        return jsonify({"error": f"Failed to list scans: {str(e)}"}), 500
+
+@api_bp.route('/scans/<int:scan_id>', methods=['GET'])
+@login_required
+def get_scan(scan_id):
+    try:
+        scan = Scan.query.join(Resume, Scan.resume_id == Resume.id).filter(
+            Scan.id == scan_id,
+            Resume.user_id == request.current_user.id
+        ).first()
+        if not scan:
+            return jsonify({"error": "Scan not found"}), 404
+        return jsonify({
+            "id": scan.id,
+            "resume_id": scan.resume_id,
+            "overall_score": scan.overall_score,
+            "missing_keywords": scan.missing_keywords,
+            "suggested_edits": scan.suggested_edits,
+            "created_at": iso_utc(scan.created_at)
+        }), 200
+    except Exception as e:
+        print(f"Error getting scan: {e}")
+        return jsonify({"error": f"Failed to get scan: {str(e)}"}), 500

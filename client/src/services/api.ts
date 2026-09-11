@@ -2,6 +2,28 @@ import axios from "axios";
 
 const API_BASE_URL = "http://127.0.0.1:5000/api";
 
+export interface LatestScanDTO {
+  id: number;
+  overall_score: number;
+  created_at: string;
+}
+
+export interface ResumeDTO {
+  id: number;
+  file_name: string;
+  created_at: string;
+  latest_scan: LatestScanDTO | null;
+}
+
+export interface ScanDTO {
+  id: number;
+  resume_id: number;
+  overall_score: number;
+  missing_keywords: string[];
+  suggested_edits: string[];
+  created_at: string;
+}
+
 export const analyzeResume = async (file: File, jobDescription: string, token: string) => {
   const formData = new FormData();
   formData.append("resume", file);
@@ -25,6 +47,38 @@ export const regenerateResume = async (resumeId: number, acceptedEdits: string[]
       "Authorization": `Bearer ${token}`,
       "Content-Type": "application/json",
     }
+  });
+  return response.data;
+};
+
+export const listResumes = async (token: string): Promise<ResumeDTO[]> => {
+  const response = await axios.get(`${API_BASE_URL}/resumes`, {
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+export const listScans = async (token: string, resumeId?: number): Promise<ScanDTO[]> => {
+  const params: Record<string, number> = {};
+  if (resumeId !== undefined) {
+    params.resume_id = resumeId;
+  }
+  const response = await axios.get(`${API_BASE_URL}/scans`, {
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+    params,
+  });
+  return response.data;
+};
+
+export const getScanById = async (token: string, id: number): Promise<ScanDTO> => {
+  const response = await axios.get(`${API_BASE_URL}/scans/${id}`, {
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
   });
   return response.data;
 };
