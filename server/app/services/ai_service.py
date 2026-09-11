@@ -53,3 +53,26 @@ def analyze_resume_with_gemini(resume_text: str, job_description: str) -> str:
     )
     
     return response.text
+
+def regenerate_resume_with_gemini(original_text: str, accepted_edits: list[str]) -> str:
+    """Rewrites the resume text cleanly incorporating the user's accepted suggestions."""
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    
+    edits_bullet_points = "\n".join([f"- {edit}" for edit in accepted_edits])
+    
+    prompt = f"""
+    You are an expert professional resume writer. 
+    Take the original resume text and rewrite/update it to seamlessly incorporate the following accepted improvements and bullet point suggestions. Maintain a professional, results-oriented tone, correct grammar, and output the clean, complete text of the updated resume. Do not include markdown meta-commentary, just return the final resume text.
+    
+    Accepted Improvements to Integrate:
+    {edits_bullet_points}
+    
+    Original Resume Text:
+    {original_text}
+    """
+
+    response = client.models.generate_content(
+        model='gemini-2.5-flash',
+        contents=prompt
+    )
+    return response.text

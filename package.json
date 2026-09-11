@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "@clerk/clerk-react": "^5.61.9",
-    "axios": "^1.20.0",
-    "lucide-react": "^1.43.0"
-  }
-}
