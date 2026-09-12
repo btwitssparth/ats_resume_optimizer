@@ -1,6 +1,15 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://127.0.0.1:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:5000/api";
+
+export interface AnalysisResultDTO {
+  overall_score: number;
+  missing_keywords: string[];
+  suggested_edits: string[];
+  is_hallucinated_metric?: boolean;
+  resume_id: number;
+  scan_id: number;
+}
 
 export interface LatestScanDTO {
   id: number;
@@ -24,7 +33,11 @@ export interface ScanDTO {
   created_at: string;
 }
 
-export const analyzeResume = async (file: File, jobDescription: string, token: string) => {
+export const analyzeResume = async (
+  file: File,
+  jobDescription: string,
+  token: string
+): Promise<AnalysisResultDTO> => {
   const formData = new FormData();
   formData.append("resume", file);
   formData.append("job_description", jobDescription);
@@ -38,7 +51,16 @@ export const analyzeResume = async (file: File, jobDescription: string, token: s
   return response.data;
 };
 
-export const regenerateResume = async (resumeId: number, acceptedEdits: string[], token: string) => {
+export interface RegenerateResumeResponseDTO {
+  message: string;
+  updated_resume_text: string;
+}
+
+export const regenerateResume = async (
+  resumeId: number,
+  acceptedEdits: string[],
+  token: string
+): Promise<RegenerateResumeResponseDTO> => {
   const response = await axios.post(`${API_BASE_URL}/regenerate`, {
     resume_id: resumeId,
     accepted_edits: acceptedEdits

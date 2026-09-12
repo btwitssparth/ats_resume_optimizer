@@ -1,13 +1,16 @@
-\import { ToastProvider } from "./contexts/ToastContext";
+import { ToastProvider } from "./contexts/ToastContext";
+import { AppProvider } from "./contexts/AppContext";
 import Toast from "./components/ui/Toast";
 import AppRoutes from "./AppRoutes";
 
 function App() {
   return (
-    <ToastProvider>
-      <AppRoutes />
-      <Toast />
-    </ToastProvider>
+    <AppProvider>
+      <ToastProvider>
+        <AppRoutes />
+        <Toast />
+      </ToastProvider>
+    </AppProvider>
   );
 }
 

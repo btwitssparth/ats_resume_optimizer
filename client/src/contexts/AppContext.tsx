@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
+import React, { createContext, useContext, useMemo, useState, useCallback, useEffect } from "react";
 
 type Density = "comfortable" | "compact";
 type Motion = "full" | "reduced";
@@ -17,8 +17,6 @@ interface AppContextValue {
   setDefaultMatcherResumeId: (v: string | null) => void;
   autoApplyEdits: boolean;
   setAutoApplyEdits: (v: boolean) => void;
-  path: string;
-  navigate: (to: string, opts?: { replace?: boolean }) => void;
   mobileDrawerOpen: boolean;
   toggleMobileDrawer: () => void;
   setMobileDrawerOpen: (v: boolean) => void;
@@ -32,6 +30,7 @@ function readLS<T>(key: string, fallback: T): T {
     if (raw === null) return fallback;
     return JSON.parse(raw) as T;
   } catch {
+    // Malformed or inaccessible localStorage value — fall back to the default.
     return fallback;
   }
 }
@@ -40,7 +39,13 @@ function writeLS<T>(key: string, value: T) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch {
+    // Storage may be unavailable (private browsing, quota exceeded, etc.) — ignore.
   }
+}
+
+function getSystemReducedMotion(): boolean {
+  if (typeof window === "undefined" || !window.matchMedia) return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -56,14 +61,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       try {
         return JSON.parse(saved) as Motion;
       } catch {
+        // Fall through to the system preference below.
       }
     }
-    if (typeof window !== "undefined" && window.matchMedia) {
-      return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "reduced" : "full";
-    }
-    return "full";
+    return getSystemReducedMotion() ? "reduced" : "full";
   });
-  const [systemReduced, setSystemReduced] = useState<boolean>(false);
+  const [systemReduced, setSystemReduced] = useState<boolean>(getSystemReducedMotion);
   const [defaultMatcherResumeId, setDefaultMatcherResumeIdState] = useState<string | null>(() =>
     readLS<string | null>("ats_default_matcher", null)
   );
@@ -71,20 +74,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     readLS("ats_auto_apply_edits", false)
   );
 
-  const initialPath = (() => {
-    if (typeof window === "undefined") return "/app/dashboard";
-    const p = window.location.pathname || "/";
-    if (p === "/") return "/app/dashboard";
-    return p;
-  })();
-  const [path, setPath] = useState<string>(initialPath);
-
   const [mobileDrawerOpen, setMobileDrawerOpenState] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setSystemReduced(mq.matches);
     const handler = (e: MediaQueryListEvent) => setSystemReduced(e.matches);
     if (mq.addEventListener) mq.addEventListener("change", handler);
     else mq.addListener(handler);
@@ -126,27 +120,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     writeLS("ats_auto_apply_edits", v);
   }, []);
 
-  const navigate = useCallback((to: string, opts?: { replace?: boolean }) => {
-    if (typeof window === "undefined") return;
-    const url = new URL(to, window.location.origin);
-    if (opts?.replace) {
-      window.history.replaceState({}, "", url.pathname + url.search + url.hash);
-    } else {
-      window.history.pushState({}, "", url.pathname + url.search + url.hash);
-    }
-    setPath(url.pathname);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const handler = () => {
-      const p = window.location.pathname || "/";
-      setPath(p === "/" ? "/app/dashboard" : p);
-    };
-    window.addEventListener("popstate", handler);
-    return () => window.removeEventListener("popstate", handler);
-  }, []);
-
   const toggleMobileDrawer = useCallback(() => {
     setMobileDrawerOpenState((v) => !v);
   }, []);
@@ -169,8 +142,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setDefaultMatcherResumeId,
     autoApplyEdits,
     setAutoApplyEdits,
-    path,
-    navigate,
     mobileDrawerOpen,
     toggleMobileDrawer,
     setMobileDrawerOpen,
@@ -179,6 +150,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- co-locating the hook with its Provider is intentional
 export function useApp() {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error("useApp must be used within AppProvider");

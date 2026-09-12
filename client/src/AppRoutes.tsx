@@ -42,8 +42,12 @@ export default function AppRoutes() {
           <Route path="/builder" element={<Builder />} />
           <Route path="/settings" element={<Settings />} />
           
-          {/* Fallback for Job Matcher/Versions which reuse Analyzer for now */}
+          {/* Fallback for Job Matcher/Versions which reuse existing views for now */}
           <Route path="/jobs" element={<Navigate to="/analyzer" replace />} />
+          <Route path="/versions" element={<Navigate to="/builder" replace />} />
+
+          {/* Any other unknown protected path falls back to the dashboard */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>
     </BrowserRouter>

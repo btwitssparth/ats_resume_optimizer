@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
-import { analyzeResume, regenerateResume } from "../services/api";
+import { analyzeResume, regenerateResume, type AnalysisResultDTO } from "../services/api";
+import { useToast } from "../contexts/ToastContext";
 
 export function useResumeOptimizer(preloadScanId?: number) {
   void preloadScanId;
   const { getToken } = useAuth();
-  
-  const [result, setResult] = useState<any>(null);
+  const { addToast } = useToast();
+
+  const [result, setResult] = useState<AnalysisResultDTO | null>(null);
   const [loading, setLoading] = useState(false);
   const [acceptedEdits, setAcceptedEdits] = useState<string[]>([]);
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -21,18 +23,19 @@ export function useResumeOptimizer(preloadScanId?: number) {
     try {
       const token = await getToken();
       if (!token) throw new Error("No auth token available");
-      
+
       const data = await analyzeResume(file, jobDescription, token);
       setResult(data);
     } catch (error) {
       console.error("Upload failed:", error);
-      alert("Error analyzing resume. Check console.");
+      addToast("Error analyzing resume. Please try again.", "error");
     } finally {
       setLoading(false);
     }
   };
 
   const handleRegenerate = async () => {
+    if (!result) return;
     setIsRegenerating(true);
     try {
       const token = await getToken();
@@ -42,7 +45,7 @@ export function useResumeOptimizer(preloadScanId?: number) {
       setRegeneratedText(data.updated_resume_text);
     } catch (error) {
       console.error("Regeneration failed:", error);
-      alert("Failed to regenerate resume.");
+      addToast("Failed to regenerate resume.", "error");
     } finally {
       setIsRegenerating(false);
     }

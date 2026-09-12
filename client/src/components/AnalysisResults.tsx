@@ -6,9 +6,10 @@ import {
   Sparkles,
   Loader2,
 } from "lucide-react";
+import type { AnalysisResultDTO } from "../services/api";
 
 interface AnalysisResultsProps {
-  result: any;
+  result: AnalysisResultDTO | null;
   acceptedEdits: string[];
   onToggleEdit: (edit: string) => void;
   onRegenerate: () => Promise<void>;

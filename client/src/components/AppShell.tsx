@@ -1,4 +1,5 @@
 import { UserButton } from "@clerk/clerk-react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard,
@@ -15,7 +16,6 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { useApp } from "../contexts/AppContext";
-import AppRoutes from "../AppRoutes";
 
 interface NavItem {
   path: string;
@@ -24,33 +24,33 @@ interface NavItem {
 }
 
 const primaryNav: NavItem[] = [
-  { path: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/app/resume/analyzer", label: "Analyzer", icon: FileSearch },
-  { path: "/app/matcher", label: "Matcher", icon: Target },
-  { path: "/app/history", label: "History", icon: History },
+  { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { path: "/analyzer", label: "Analyzer", icon: FileSearch },
+  { path: "/jobs", label: "Matcher", icon: Target },
+  { path: "/history", label: "History", icon: History },
 ];
 
 const resumeGroup: NavItem[] = [
-  { path: "/app/resume/analyzer", label: "Analyzer", icon: FileSearch },
-  { path: "/app/resume/builder", label: "Builder", icon: ScrollText },
-  { path: "/app/resume/versions", label: "Versions", icon: GitCommit },
+  { path: "/analyzer", label: "Analyzer", icon: FileSearch },
+  { path: "/builder", label: "Builder", icon: ScrollText },
+  { path: "/versions", label: "Versions", icon: GitCommit },
 ];
 
 const settingsNav: NavItem[] = [
-  { path: "/app/settings", label: "Settings", icon: Settings },
+  { path: "/settings", label: "Settings", icon: Settings },
 ];
 
 const bottomNav: NavItem[] = [
-  { path: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/app/resume/analyzer", label: "Analyzer", icon: FileSearch },
-  { path: "/app/matcher", label: "Matcher", icon: Target },
-  { path: "/app/history", label: "History", icon: History },
+  { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { path: "/analyzer", label: "Analyzer", icon: FileSearch },
+  { path: "/jobs", label: "Matcher", icon: Target },
+  { path: "/history", label: "History", icon: History },
 ];
 
 const moreNav: NavItem[] = [
-  { path: "/app/resume/builder", label: "Builder", icon: ScrollText },
-  { path: "/app/resume/versions", label: "Versions", icon: GitCommit },
-  { path: "/app/settings", label: "Settings", icon: Settings },
+  { path: "/builder", label: "Builder", icon: ScrollText },
+  { path: "/versions", label: "Versions", icon: GitCommit },
+  { path: "/settings", label: "Settings", icon: Settings },
 ];
 
 function NavLink({
@@ -62,8 +62,9 @@ function NavLink({
   collapsed?: boolean;
   onClick?: () => void;
 }) {
-  const { path, navigate } = useApp();
-  const active = path === item.path;
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const active = pathname === item.path;
   const Icon = item.icon;
 
   return (
@@ -143,8 +144,9 @@ function Sidebar({ collapsed }: { collapsed: boolean }) {
 }
 
 function BottomNavItem({ item }: { item: NavItem }) {
-  const { path, navigate } = useApp();
-  const active = path === item.path;
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const active = pathname === item.path;
   const Icon = item.icon;
   return (
     <button
@@ -243,7 +245,7 @@ export default function AppShell() {
 
         <main className="flex-1 overflow-y-auto custom-scrollbar">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-24 md:pb-8">
-            <AppRoutes />
+            <Outlet />
           </div>
         </main>
 

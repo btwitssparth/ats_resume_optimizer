@@ -5,6 +5,7 @@ import './index.css'
 import { ClerkProvider } from '@clerk/clerk-react'
 
 // Import your Clerk Publishable Key from the Vite environment
+// eslint-disable-next-line react-refresh/only-export-components -- entry point, not a component module
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
 if (!PUBLISHABLE_KEY) {

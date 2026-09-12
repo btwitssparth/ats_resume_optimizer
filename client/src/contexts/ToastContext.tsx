@@ -19,7 +19,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const addToast = (message: string, type: ToastItem['type']) => {
-    const id = Math.random().toString(36).substring(2, 9);
+    const id = crypto.randomUUID();
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => removeToast(id), 3000);
   };
@@ -35,6 +35,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- co-locating the hook with its Provider is intentional
 export const useToast = () => {
   const context = useContext(ToastContext);
   if (!context) throw new Error("useToast must be used within a ToastProvider");

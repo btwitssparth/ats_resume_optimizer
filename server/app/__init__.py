@@ -6,11 +6,13 @@ from .models import User, Resume, Scan
 
 def create_app():
     app = Flask(__name__)
-    CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}})
-    CORS(app)
+    CORS(app, resources={r"/api/*": {"origins": os.getenv("CORS_ORIGIN", "http://localhost:5173")}})
 
     # Database Configuration
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        raise RuntimeError("DATABASE_URL environment variable is not set")
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     # Initialize extensions with this app

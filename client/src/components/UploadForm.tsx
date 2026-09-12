@@ -69,7 +69,7 @@ export default function UploadForm({ onAnalyze, loading }: UploadFormProps) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-      className="bg-[#141416] p-6 sm:p-7 lg:p-8 rounded-2xl border border border-[#23232a] h-fit"
+      className="bg-[#141416] p-6 sm:p-7 lg:p-8 rounded-2xl border border-[#23232a] h-fit"
     >
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-[15px] font-semibold text-[#f5f5f7] flex items-center gap-2 tracking-tight">

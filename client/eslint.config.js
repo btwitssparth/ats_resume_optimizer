@@ -18,5 +18,13 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Allow intentionally-unused params/vars prefixed with `_`
+      // (used for not-yet-wired API params like `_token`).
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+    },
   },
 ])

@@ -37,10 +37,10 @@ export default function ScoreCard({
 
   useEffect(() => {
     if (!motionEnabled) {
+      // Jumping the motion values triggers the "change" subscriptions below
+      // synchronously, which is what actually updates `display`/`dashOffset`.
       count.jump(clampedScore);
       progress.jump(clampedScore);
-      setDisplay(clampedScore);
-      setDashOffset(circumference - (clampedScore / 100) * circumference);
       return;
     }
     const countControls = animate(count, clampedScore, {
@@ -57,7 +57,7 @@ export default function ScoreCard({
       countControls.stop();
       progressControls.stop();
     };
-  }, [count, progress, clampedScore, motionEnabled, circumference]);
+  }, [count, progress, clampedScore, motionEnabled]);
 
   useEffect(() => {
     return rounded.on("change", (v) => setDisplay(v));
