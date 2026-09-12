@@ -176,7 +176,7 @@ export default function AppShell() {
 
         <main className="flex-1 overflow-y-auto custom-scrollbar">
           {/* Dashboard, Analyzer, etc. render here! */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-24 md:pb-8">
+          <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 pb-24 md:pb-8">
             <AppRoutes />
           </div>
         </main>
