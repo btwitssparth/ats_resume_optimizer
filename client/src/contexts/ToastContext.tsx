@@ -1,88 +1,42 @@
-import React, { createContext, useContext, useReducer, useCallback } from "react";
-
-export type ToastVariant = "success" | "info" | "error";
+// client/src/contexts/ToastContext.tsx
+import { createContext, useContext, useState, type ReactNode } from 'react';
 
 export interface ToastItem {
   id: string;
-  title: string;
-  description?: string;
-  variant: ToastVariant;
-  action?: { label: string; onClick: () => void };
-  dismissible?: boolean;
-  duration?: number;
+  message: string;
+  type: 'success' | 'error' | 'info';
 }
 
-type ToastState = {
+interface ToastContextType {
   toasts: ToastItem[];
-};
-
-type ToastAction =
-  | { type: "PUSH_TOAST"; payload: ToastItem }
-  | { type: "REMOVE_TOAST"; payload: string };
-
-const initialState: ToastState = {
-  toasts: [],
-};
-
-function genId(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+  addToast: (message: string, type: ToastItem['type']) => void;
+  removeToast: (id: string) => void;
 }
 
-function toastReducer(state: ToastState, action: ToastAction): ToastState {
-  switch (action.type) {
-    case "PUSH_TOAST":
-      return {
-        ...state,
-        toasts: [...state.toasts, action.payload],
-      };
-    case "REMOVE_TOAST":
-      return {
-        ...state,
-        toasts: state.toasts.filter((t) => t.id !== action.payload),
-      };
-    default:
-      return state;
-  }
-}
+const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
-interface ToastContextValue {
-  push: (toast: Omit<ToastItem, "id">) => string;
-  remove: (id: string) => void;
-}
+export function ToastProvider({ children }: { children: ReactNode }) {
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
 
-const ToastContext = createContext<ToastContextValue | null>(null);
-
-export function ToastProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(toastReducer, initialState);
-
-  const push = useCallback(
-    (toast: Omit<ToastItem, "id">): string => {
-      const id = genId();
-      const fullToast: ToastItem = { id, ...toast };
-      dispatch({ type: "PUSH_TOAST", payload: fullToast });
-      return id;
-    },
-    []
-  );
-
-  const remove = useCallback((id: string) => {
-    dispatch({ type: "REMOVE_TOAST", payload: id });
-  }, []);
-
-  const value: ToastContextValue & { toasts: ToastItem[] } = {
-    toasts: state.toasts,
-    push,
-    remove,
+  const addToast = (message: string, type: ToastItem['type']) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => removeToast(id), 3000);
   };
 
-  return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>;
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  };
+
+  return (
+    <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
+      {children}
+    </ToastContext.Provider>
+  );
 }
 
-export function useToast() {
-  const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error("useToast must be used within ToastProvider");
-  return ctx as ToastContextValue & { toasts: ToastItem[] };
-}
+export const useToast = () => {
+  const context = useContext(ToastContext);
+  if (!context) throw new Error("useToast must be used within a ToastProvider");
+  return context;
+};
