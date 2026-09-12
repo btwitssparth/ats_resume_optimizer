@@ -6,16 +6,16 @@ def utcnow():
     return datetime.now(timezone.utc)
 
 class User(db.Model):
-    __tablename__ = "users"
+    __tablename__ = "user"
     id = db.Column(db.String(100), primary_key=True)
     email = db.Column(db.String(320), unique=True, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
     resumes = db.relationship("Resume", backref="user", lazy="select", cascade="all, delete-orphan")
 
 class Resume(db.Model):
-    __tablename__ = "resumes"
+    __tablename__ = "resume"
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.String(100), db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = db.Column(db.String(100), db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
     file_name = db.Column(db.String(255), nullable=False)
     parsed_text = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
@@ -27,9 +27,9 @@ class Resume(db.Model):
                 "latest_scan": latest_scan.to_dict() if latest_scan else None}
 
 class Scan(db.Model):
-    __tablename__ = "scans"
+    __tablename__ = "scan"
     id = db.Column(db.Integer, primary_key=True)
-    resume_id = db.Column(db.Integer, db.ForeignKey("resumes.id", ondelete="CASCADE"), nullable=False, index=True)
+    resume_id = db.Column(db.Integer, db.ForeignKey("resume.id", ondelete="CASCADE"), nullable=False, index=True)
     job_title = db.Column(db.String(200), nullable=False, default="Target Role")
     company = db.Column(db.String(200), nullable=False, default="")
     job_description = db.Column(db.Text, nullable=False)
