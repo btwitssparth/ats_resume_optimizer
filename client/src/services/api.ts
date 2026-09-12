@@ -1,5 +1,6 @@
 import axios from "axios";
 
+// Using the /api suffix explicitly
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:5000/api";
 
 export interface AnalysisResultDTO {
@@ -27,6 +28,8 @@ export interface ResumeDTO {
 export interface ScanDTO {
   id: number;
   resume_id: number;
+  job_title: string;
+  company: string;
   overall_score: number;
   missing_keywords: string[];
   suggested_edits: string[];
@@ -36,11 +39,15 @@ export interface ScanDTO {
 export const analyzeResume = async (
   file: File,
   jobDescription: string,
+  jobTitle: string,
+  company: string,
   token: string
 ): Promise<AnalysisResultDTO> => {
   const formData = new FormData();
   formData.append("resume", file);
   formData.append("job_description", jobDescription);
+  formData.append("job_title", jobTitle);
+  formData.append("company", company);
 
   const response = await axios.post(`${API_BASE_URL}/analyze`, formData, {
     headers: {
@@ -75,9 +82,7 @@ export const regenerateResume = async (
 
 export const listResumes = async (token: string): Promise<ResumeDTO[]> => {
   const response = await axios.get(`${API_BASE_URL}/resumes`, {
-    headers: {
-      "Authorization": `Bearer ${token}`,
-    },
+    headers: { "Authorization": `Bearer ${token}` },
   });
   return response.data;
 };
@@ -88,9 +93,7 @@ export const listScans = async (token: string, resumeId?: number): Promise<ScanD
     params.resume_id = resumeId;
   }
   const response = await axios.get(`${API_BASE_URL}/scans`, {
-    headers: {
-      "Authorization": `Bearer ${token}`,
-    },
+    headers: { "Authorization": `Bearer ${token}` },
     params,
   });
   return response.data;
@@ -98,9 +101,7 @@ export const listScans = async (token: string, resumeId?: number): Promise<ScanD
 
 export const getScanById = async (token: string, id: number): Promise<ScanDTO> => {
   const response = await axios.get(`${API_BASE_URL}/scans/${id}`, {
-    headers: {
-      "Authorization": `Bearer ${token}`,
-    },
+    headers: { "Authorization": `Bearer ${token}` },
   });
   return response.data;
 };

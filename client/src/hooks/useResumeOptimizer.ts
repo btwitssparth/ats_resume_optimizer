@@ -1,37 +1,37 @@
-import { useState } from "react";
-import { useAuth } from "@clerk/clerk-react";
-import { analyzeResume, regenerateResume, type AnalysisResultDTO } from "../services/api";
-import { useToast } from "../contexts/ToastContext";
+import { useState } from 'react';
+import { useAuth } from '@clerk/clerk-react';
+import { analyzeResume, regenerateResume, type AnalysisResultDTO } from '../services/api';
 
-export function useResumeOptimizer(preloadScanId?: number) {
-  void preloadScanId;
+export function useResumeOptimizer() {
   const { getToken } = useAuth();
-  const { addToast } = useToast();
-
-  const [result, setResult] = useState<AnalysisResultDTO | null>(null);
   const [loading, setLoading] = useState(false);
-  const [acceptedEdits, setAcceptedEdits] = useState<string[]>([]);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [result, setResult] = useState<AnalysisResultDTO | null>(null);
+  const [acceptedEdits, setAcceptedEdits] = useState<string[]>([]);
   const [regeneratedText, setRegeneratedText] = useState<string | null>(null);
 
-  const handleAnalyze = async (file: File, jobDescription: string) => {
+  const handleAnalyze = async (file: File, jobDescription: string, jobTitle: string, company: string) => {
     setLoading(true);
     setResult(null);
     setRegeneratedText(null);
     setAcceptedEdits([]);
-
     try {
       const token = await getToken();
-      if (!token) throw new Error("No auth token available");
-
-      const data = await analyzeResume(file, jobDescription, token);
+      if (!token) throw new Error("Authentication required");
+      
+      const data = await analyzeResume(file, jobDescription, jobTitle, company, token);
       setResult(data);
     } catch (error) {
-      console.error("Upload failed:", error);
-      addToast("Error analyzing resume. Please try again.", "error");
+      console.error("Analysis failed:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleEdit = (edit: string) => {
+    setAcceptedEdits(prev => 
+      prev.includes(edit) ? prev.filter(e => e !== edit) : [...prev, edit]
+    );
   };
 
   const handleRegenerate = async () => {
@@ -39,29 +39,30 @@ export function useResumeOptimizer(preloadScanId?: number) {
     setIsRegenerating(true);
     try {
       const token = await getToken();
-      if (!token) throw new Error("No auth token available");
+      if (!token) throw new Error("Authentication required");
 
-      const data = await regenerateResume(result.resume_id, acceptedEdits, token);
-      setRegeneratedText(data.updated_resume_text);
+      const response = await regenerateResume(result.resume_id, acceptedEdits, token);
+      setRegeneratedText(response.updated_resume_text);
     } catch (error) {
       console.error("Regeneration failed:", error);
-      addToast("Failed to regenerate resume.", "error");
     } finally {
       setIsRegenerating(false);
     }
   };
 
-  const toggleEdit = (edit: string) => {
-    setAcceptedEdits(prev => prev.includes(edit) ? prev.filter(e => e !== edit) : [...prev, edit]);
-  };
-
   const resetRegeneration = () => {
     setRegeneratedText(null);
-    setAcceptedEdits([]);
   };
 
   return {
-    result, loading, acceptedEdits, isRegenerating, regeneratedText,
-    handleAnalyze, handleRegenerate, toggleEdit, resetRegeneration
+    result,
+    loading,
+    acceptedEdits,
+    isRegenerating,
+    regeneratedText,
+    handleAnalyze,
+    handleRegenerate,
+    toggleEdit,
+    resetRegeneration
   };
 }
