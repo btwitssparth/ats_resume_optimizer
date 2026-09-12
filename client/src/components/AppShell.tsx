@@ -49,7 +49,7 @@ function NavLink({ item, collapsed, onClick }: { item: NavItem; collapsed?: bool
   // FIXED: Using React Router instead of custom context
   const location = useLocation();
   const navigate = useNavigate();
-  const active = location.pathname === item.path;
+  const active = location.pathname === item.path || (item.path !== "/app/dashboard" && location.pathname.startsWith(`${item.path}/`));
   const Icon = item.icon;
 
   return (
