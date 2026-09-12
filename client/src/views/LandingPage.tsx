@@ -36,7 +36,7 @@ const features = [
   {
     icon: Zap,
     title: "Instant Optimized PDF",
-    description: "Download a polished, ATS-friendly resume PDF in seconds — ready to submit.",
+    description: "Generate a cleaner, ATS-friendly version of your resume from the improvements you select.",
   },
 ];
 
@@ -84,7 +84,7 @@ export default function LandingPage() {
           >
             Sign in to securely analyze your resume against target job descriptions,
             discover missing keywords, and automatically rewrite your experience
-            to land more interviews.
+            to present your experience more clearly and align it with the role.
           </motion.p>
 
           <motion.div variants={itemVariants}>
