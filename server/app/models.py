@@ -51,3 +51,22 @@ def _json_list(value):
         return parsed if isinstance(parsed, list) else []
     except (TypeError, json.JSONDecodeError):
         return []
+
+
+class BuilderResume(db.Model):
+    __tablename__ = "builder_resume"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(100), db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = db.Column(db.String(255), nullable=False, default="Untitled Resume")
+    template = db.Column(db.String(50), nullable=False, default="ats-classic")
+    data = db.Column(db.Text, nullable=False, default="{}")
+    created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
+
+    def to_dict(self):
+        try:
+            payload = json.loads(self.data)
+        except (TypeError, json.JSONDecodeError):
+            payload = {}
+        return {"id": self.id, "name": self.name, "template": self.template, "data": payload,
+                "created_at": self.created_at.isoformat(), "updated_at": self.updated_at.isoformat()}
