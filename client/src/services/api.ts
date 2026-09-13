@@ -21,7 +21,7 @@ function getErrorMessage(error: unknown): string {
 async function request<T>(promise: Promise<{ data: T }>): Promise<T> {
   try { return (await promise).data; }
   catch (error) {
-    if (error instanceof AxiosError) throw new ApiError(getErrorMessage(error), error.response?.status);
+    if (error instanceof AxiosError) {\n      const status = error.response?.status;\n      if (status === 401) window.dispatchEvent(new Event("ats:session-expired"));\n      throw new ApiError(getErrorMessage(error), status);\n    }
     throw error;
   }
 }
