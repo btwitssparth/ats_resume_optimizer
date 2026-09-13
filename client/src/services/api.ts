@@ -59,3 +59,22 @@ export const getScanById = (token: string, id: number) =>
   request(axios.get<ScanDTO>(`${API_BASE_URL}/api/scans/${id}`, { headers: authHeaders(token) }));
 export const getDashboardStats = (token: string) =>
   request(axios.get<DashboardStatsDTO>(`${API_BASE_URL}/api/stats`, { headers: authHeaders(token) }));
+
+
+export interface BuilderResumeDTO {
+  id: number;
+  name: string;
+  template: string;
+  data: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export const getBuilderResume = (token: string) =>
+  request<BuilderResumeDTO[]>(axios.get<BuilderResumeDTO[]>(`${API_BASE_URL}/api/builder/resumes`, { headers: authHeaders(token) })).then(items => items[0] ?? null);
+
+export const createBuilderResume = (token: string, payload: { name: string; template: string; data: Record<string, unknown> }) =>
+  request(axios.post<BuilderResumeDTO>(`${API_BASE_URL}/api/builder/resumes`, payload, { headers: authHeaders(token) }));
+
+export const updateBuilderResume = (token: string, id: number, payload: { name: string; template: string; data: Record<string, unknown> }) =>
+  request(axios.put<BuilderResumeDTO>(`${API_BASE_URL}/api/builder/resumes/${id}`, payload, { headers: authHeaders(token) }));
