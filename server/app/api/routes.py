@@ -4,7 +4,7 @@ from flask import jsonify, request
 from sqlalchemy import func
 from . import api_bp
 from ..extensions import db
-from ..models import Resume, Scan
+from ..models import BuilderResume, Resume, Scan
 from ..services.ai_service import analyze_resume_with_gemini, extract_text_from_pdf, regenerate_resume_with_gemini
 from ..utils.auth import login_required
 
@@ -132,3 +132,49 @@ def stats():
     total = base.with_entities(func.count(Scan.id)).scalar() or 0
     average = base.with_entities(func.avg(Scan.overall_score)).scalar()
     return jsonify({"totalAnalyzed": total, "averageScore": round(float(average)) if average is not None else 0, "interviewsLanded": 0}), 200
+
+
+@api_bp.post("/builder/resumes")
+@login_required
+def create_builder_resume():
+    payload = request.get_json(silent=True) or {}
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        return _error("Resume data must be an object.")
+    name = str(payload.get("name") or "Untitled Resume").strip()[:255] or "Untitled Resume"
+    template = str(payload.get("template") or "ats-classic").strip()[:50] or "ats-classic"
+    try:
+        resume = BuilderResume(user_id=request.current_user.id, name=name, template=template,
+                               data=json.dumps(data, ensure_ascii=False))
+        db.session.add(resume)
+        db.session.commit()
+        return jsonify(resume.to_dict()), 201
+    except Exception:
+        db.session.rollback()
+        return _error("Could not save resume. Please try again.", 500)
+
+@api_bp.put("/builder/resumes/<int:resume_id>")
+@login_required
+def update_builder_resume(resume_id):
+    resume = BuilderResume.query.filter_by(id=resume_id, user_id=request.current_user.id).first()
+    if resume is None:
+        return _error("Resume not found.", 404)
+    payload = request.get_json(silent=True) or {}
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        return _error("Resume data must be an object.")
+    try:
+        resume.name = str(payload.get("name") or resume.name).strip()[:255] or resume.name
+        resume.template = str(payload.get("template") or resume.template).strip()[:50] or resume.template
+        resume.data = json.dumps(data, ensure_ascii=False)
+        db.session.commit()
+        return jsonify(resume.to_dict()), 200
+    except Exception:
+        db.session.rollback()
+        return _error("Could not update resume. Please try again.", 500)
+
+@api_bp.get("/builder/resumes")
+@login_required
+def list_builder_resumes():
+    resumes = BuilderResume.query.filter_by(user_id=request.current_user.id).order_by(BuilderResume.updated_at.desc()).all()
+    return jsonify([resume.to_dict() for resume in resumes]), 200
