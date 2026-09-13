@@ -70,8 +70,16 @@ export interface BuilderResumeDTO {
   updated_at: string;
 }
 
-export const getBuilderResume = (token: string) =>
-  request<BuilderResumeDTO[]>(axios.get<BuilderResumeDTO[]>(`${API_BASE_URL}/api/builder/resumes`, { headers: authHeaders(token) })).then(items => items[0] ?? null);
+export const listBuilderResumes = (token: string) =>
+  request<BuilderResumeDTO[]>(axios.get<BuilderResumeDTO[]>(`${API_BASE_URL}/api/builder/resumes`, { headers: authHeaders(token) }));
+
+export const getBuilderResume = (token: string, id?: number) =>
+  id === undefined
+    ? listBuilderResumes(token).then(items => items[0] ?? null)
+    : request<BuilderResumeDTO>(axios.get<BuilderResumeDTO>(`${API_BASE_URL}/api/builder/resumes/${id}`, { headers: authHeaders(token) }));
+
+export const deleteBuilderResume = (token: string, id: number) =>
+  request<{ message: string }>(axios.delete(`${API_BASE_URL}/api/builder/resumes/${id}`, { headers: authHeaders(token) }));
 
 export const createBuilderResume = (token: string, payload: { name: string; template: string; data: Record<string, unknown> }) =>
   request(axios.post<BuilderResumeDTO>(`${API_BASE_URL}/api/builder/resumes`, payload, { headers: authHeaders(token) }));
