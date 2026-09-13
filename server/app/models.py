@@ -11,6 +11,7 @@ class User(db.Model):
     email = db.Column(db.String(320), unique=True, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
     resumes = db.relationship("Resume", backref="user", lazy="select", cascade="all, delete-orphan")
+    builder_resumes = db.relationship("BuilderResume", backref="user", lazy="select", cascade="all, delete-orphan")
 
 class Resume(db.Model):
     __tablename__ = "resume"
