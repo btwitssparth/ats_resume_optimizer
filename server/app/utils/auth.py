@@ -1,66 +1,54 @@
 import os
+import logging
 from functools import wraps
-from flask import request, jsonify
+from flask import jsonify, request
 from clerk_backend_api import Clerk
 from clerk_backend_api.security.types import AuthenticateRequestOptions
 from ..extensions import db
 from ..models import User
 
-# Cache the Clerk SDK client (it internally caches JWKS lookups too)
 _clerk_sdk = None
-
+logger = logging.getLogger(__name__)
 
 def get_clerk_sdk():
     global _clerk_sdk
     if _clerk_sdk is None:
         secret_key = os.getenv("CLERK_SECRET_KEY")
         if not secret_key:
-            raise RuntimeError("CLERK_SECRET_KEY environment variable is not set")
+            raise RuntimeError("CLERK_SECRET_KEY is not configured")
         _clerk_sdk = Clerk(bearer_auth=secret_key)
     return _clerk_sdk
 
-
-def login_required(f):
-    @wraps(f)
+def login_required(view):
+    @wraps(view)
     def decorated_function(*args, **kwargs):
-        auth_header = request.headers.get('Authorization', None)
-        if not auth_header:
-            return jsonify({"error": "Missing Authorization Token"}), 401
-
+        auth_header = request.headers.get("Authorization", "")
+        scheme, _, token = auth_header.partition(" ")
+        if scheme.lower() != "bearer" or not token.strip():
+            return jsonify({"error": "Authentication required"}), 401
         try:
-            token_type, _ = auth_header.split(' ', 1)
-            if token_type.lower() != 'bearer':
-                return jsonify({"error": "Invalid token type, must be Bearer"}), 401
-
-            # Verify the token's signature against Clerk's public keys. This
-            # (unlike decoding with verify_signature=False) guarantees the
-            # token was actually issued by Clerk and hasn't been tampered with.
-            request_state = get_clerk_sdk().authenticate_request(
-                request, AuthenticateRequestOptions()
-            )
-
-            if not request_state.is_signed_in:
-                return jsonify({"error": f"Authentication failed: {request_state.message}"}), 401
-
-            payload = request_state.payload or {}
-            clerk_id = payload.get('sub')
-            email = payload.get('email', 'user@example.com')
-
+            state = get_clerk_sdk().authenticate_request(request, AuthenticateRequestOptions())
+            if not state.is_signed_in:
+                return jsonify({"error": "Authentication failed"}), 401
+            payload = state.payload or {}
+            clerk_id = payload.get("sub")
+            email = payload.get("email") or payload.get("email_address")
             if not clerk_id:
-                return jsonify({"error": "Invalid token payload"}), 401
-
-            # Auto-upsert user into Neon database
-            user = User.query.filter_by(clerk_id=clerk_id).first()
-            if not user:
-                user = User(clerk_id=clerk_id, email=email)
+                return jsonify({"error": "Invalid authentication payload"}), 401
+            if not email:
+                email = f"{clerk_id}@users.invalid"
+            user = db.session.get(User, clerk_id)
+            if user is None:
+                user = User(id=clerk_id, email=email)
                 db.session.add(user)
                 db.session.commit()
-
-            # Attach user to request context
+            elif user.email != email and not email.endswith("@users.invalid"):
+                user.email = email
+                db.session.commit()
             request.current_user = user
-
-        except Exception as e:
-            return jsonify({"error": f"Authentication failed: {str(e)}"}), 401
-
-        return f(*args, **kwargs)
+            return view(*args, **kwargs)
+        except Exception as exc:
+            db.session.rollback()
+            logger.exception("Authentication failed for %s %s", request.method, request.path)
+            return jsonify({"error": "Authentication service unavailable"}), 503
     return decorated_function
