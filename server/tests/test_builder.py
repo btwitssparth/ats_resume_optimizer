@@ -1,12 +1,12 @@
 import json
 import os
-import pytest
+import pytest       
 
 @pytest.fixture
 def app():
     os.environ["DATABASE_URL"] = "sqlite:///:memory:"
     os.environ["CORS_ORIGINS"] = "http://localhost:5173"
-    from server.app import create_app
+    from app import create_app
     app = create_app()
     app.config.update(TESTING=True)
     return app
@@ -18,8 +18,8 @@ def test_health(app):
     assert response.get_json() == {"status": "ok"}
 
 def test_builder_resume_model_round_trip(app):
-    from server.app.extensions import db
-    from server.app.models import BuilderResume
+    from app.extensions import db
+    from app.models import BuilderResume
     with app.app_context():
         row = BuilderResume(user_id="test-user", name="Test Resume", template="ats-classic",
                             data=json.dumps({"skills": ["Python", "React"], "achievements": ["Award"]}))
