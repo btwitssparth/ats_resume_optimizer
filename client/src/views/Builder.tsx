@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { jsPDF } from "jspdf";
 import { useAuth } from "@clerk/clerk-react";
-import { ApiError, createBuilderResume, getBuilderResume, updateBuilderResume } from "../services/api";
+import { ApiError, createBuilderResume, deleteBuilderResume, getBuilderResume, listBuilderResumes, updateBuilderResume } from "../services/api";
 import { Plus, Trash2, Save, Eye, User, Briefcase, GraduationCap, Code2, FileText, Award, Loader2 } from "lucide-react";
 
 
@@ -16,9 +16,13 @@ const uid=()=>Math.random().toString(36).slice(2,9);
 export default function Builder(){
  const {getToken}=useAuth();
  const [data,setData]=useState<ResumeData>(blank); const [resumeId,setResumeId]=useState<number|null>(null); const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [error,setError]=useState<string|null>(null);
- const [section,setSection]=useState("personal"); const [preview,setPreview]=useState(false); const [saved,setSaved]=useState(false);
+ const [section,setSection]=useState("personal"); const [preview,setPreview]=useState(false); const [saved,setSaved]=useState(false); const [resumes,setResumes]=useState<any[]>([]);
  const update=(key:keyof ResumeData,value:any)=>setData(d=>({...d,[key]:value}));
- const save=async()=>{setSaving(true);setError(null);try{const token=await getToken();if(!token)throw new Error("Please sign in again.");const payload={name:data.name||"Untitled Resume",template:"ats-classic",data:data as unknown as Record<string,unknown>};const result=resumeId?await updateBuilderResume(token,resumeId,payload):await createBuilderResume(token,payload);setResumeId(result.id);setSaved(true);setTimeout(()=>setSaved(false),1600)}catch(e){setError(e instanceof ApiError?e.message:e instanceof Error?e.message:"Could not save resume.")}finally{setSaving(false)}};
+ const loadResumes=async()=>{const token=await getToken();if(!token)return;const items=await listBuilderResumes(token);setResumes(items);return items};
+ const newResume=()=>{setResumeId(null);setData(blank);setSection("personal");setSaved(false);setError(null)};
+ const selectResume=async(id:number)=>{try{const token=await getToken();if(!token)return;const result=await getBuilderResume(token,id);setResumeId(result.id);setData(result.data as ResumeData);setError(null)}catch(e){setError(e instanceof ApiError?e.message:"Could not load resume.")}};
+ const removeResume=async()=>{if(resumeId===null)return;if(!window.confirm("Delete this resume permanently?"))return;try{const token=await getToken();if(!token)return;await deleteBuilderResume(token,resumeId);const items=await loadResumes();if(items?.length){setResumeId(items[0].id);setData(items[0].data as ResumeData)}else newResume()}catch(e){setError(e instanceof ApiError?e.message:"Could not delete resume.")}};
+ const save=async()=>{setSaving(true);setError(null);try{const token=await getToken();if(!token)throw new Error("Please sign in again.");const payload={name:data.name||"Untitled Resume",template:"ats-classic",data:data as unknown as Record<string,unknown>};const result=resumeId?await updateBuilderResume(token,resumeId,payload):await createBuilderResume(token,payload);setResumeId(result.id);await loadResumes();setSaved(true);setTimeout(()=>setSaved(false),1600)}catch(e){setError(e instanceof ApiError?e.message:e instanceof Error?e.message:"Could not save resume.")}finally{setSaving(false)}};
  const download=()=>{
   const doc=new jsPDF({unit:"pt",format:"a4"});
   const left=42,right=553,maxWidth=511; let y=46;
@@ -39,7 +43,7 @@ export default function Builder(){
   if(data.achievements.length){heading("Achievements");data.achievements.forEach(a=>text("• "+a,8,false,11))}
   doc.save((data.name||"resume").replace(/[^a-z0-9]+/gi,"_").replace(/^_|_$/g,"")+"_Resume.pdf");
  };
- useEffect(()=>{let active=true;(async()=>{try{const token=await getToken();if(!token)return;const result=await getBuilderResume(token);if(active&&result){setResumeId(result.id);setData(result.data as ResumeData)}}catch(e){if(active)setError(e instanceof ApiError?e.message:"Could not load your saved resume.")}finally{if(active)setLoading(false)}})();return()=>{active=false}},[getToken]);
+ useEffect(()=>{let active=true;(async()=>{try{const token=await getToken();if(!token)return;const items=await listBuilderResumes(token);if(active){setResumes(items);const result=items[0];if(result){setResumeId(result.id);setData(result.data as ResumeData)}}}catch(e){if(active)setError(e instanceof ApiError?e.message:"Could not load your saved resume.")}finally{if(active)setLoading(false)}})();return()=>{active=false}},[getToken]);
  const addExp=()=>update("experience",[...data.experience,{id:uid(),role:"",company:"",location:"",start:"",end:"Present",bullets:[""]}]);
  const addEdu=()=>update("education",[...data.education,{id:uid(),school:"",degree:"",field:"",start:"",end:""}]);
  const addProject=()=>update("projects",[...data.projects,{id:uid(),name:"",link:"",description:"",technologies:""}]);
@@ -48,7 +52,14 @@ export default function Builder(){
  return (
   <div className="w-full py-2 sm:py-4">
    {error&&<div className="mb-4 rounded-lg border border-rose-900/50 bg-rose-950/20 px-4 py-3 text-sm text-rose-300">{error}</div>}
-   <div className="flex items-end justify-between gap-4 mb-6">
+   <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-[#23232a] bg-[#111114] p-2">
+ <select value={resumeId??""} onChange={e=>e.target.value?selectResume(Number(e.target.value)):newResume()} className="min-w-[220px] flex-1 rounded-lg border border-[#2a2a32] bg-[#0d0d10] px-3 py-2 text-sm text-[#d1d5db] outline-none">
+  <option value="">New resume</option>{resumes.map(r=><option key={r.id} value={r.id}>{r.name||"Untitled Resume"}</option>)}
+ </select>
+ <button type="button" onClick={newResume} className="px-3 py-2 rounded-lg border border-[#2a2a32] text-sm text-[#d1d5db] hover:bg-[#17171c]">+ New</button>
+ {resumeId!==null&&<button type="button" onClick={removeResume} className="px-3 py-2 rounded-lg border border-rose-900/50 text-sm text-rose-300 hover:bg-rose-950/20">Delete</button>}
+</div>
+<div className="flex items-end justify-between gap-4 mb-6">
     <div><p className="text-xs uppercase tracking-wider text-[#6f7480] mb-2">Resume workspace</p><h1 className="text-2xl font-bold text-[#f5f5f7]">Resume Builder</h1><p className="text-sm text-[#8a8f98] mt-1">Create an ATS-friendly resume with a live preview.</p></div>
     <div className="flex gap-2"><button onClick={()=>setPreview(!preview)} className="lg:hidden px-3 py-2 rounded-lg border border-[#23232a] bg-[#111114] text-[#d1d5db] text-sm flex items-center gap-2"><Eye className="w-4 h-4"/>{preview?"Edit":"Preview"}</button><button onClick={download} className="px-4 py-2 rounded-lg border border-[#23232a] bg-[#111114] text-[#d1d5db] text-sm font-semibold mr-2">Download PDF</button><button onClick={save} disabled={saving} className="px-4 py-2 rounded-lg bg-[#5b8def] disabled:opacity-60 hover:bg-[#4f7df6] text-white text-sm font-semibold flex items-center gap-2"><Save className="w-4 h-4"/>{saving?"Saving...":saved?"Saved":"Save Resume"}</button></div>
    </div>
