@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FileText, Target, Sparkles, ArrowRight, Clock, Plus, Briefcase } from "lucide-react";
+import { FileText, Target, ArrowRight, Clock, Plus, Briefcase } from "lucide-react";
 import { getRecentHistory, getDashboardStats } from "../services/historyService";
 import type { HistoryItem, DashboardStats } from "../services/mock/mockHistoryStore";
 
@@ -54,10 +54,10 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
         <StatCard title="Total Analyzed" value={loading ? null : stats?.totalAnalyzed} icon={<FileText className="w-5 h-5 text-[#6d95ff]" />} loading={loading} />
         <StatCard title="Average ATS Score" value={loading ? null : `${stats?.averageScore}%`} icon={<Target className="w-5 h-5 text-emerald-600" />} loading={loading} />
-        <StatCard title="Interviews Landed" value={loading ? null : stats?.interviewsLanded} icon={<Sparkles className="w-5 h-5 text-amber-500" />} loading={loading} />
+        
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -96,7 +96,6 @@ export default function Dashboard() {
             <h2 className="font-semibold text-[#f5f5f7] mb-4">Quick Links</h2>
             <div className="space-y-2">
               <QuickLink to="/app/resume/builder" icon={<FileText className="w-4 h-4" />} text="Resume Builder" />
-              <QuickLink to="/app/matcher" icon={<Briefcase className="w-4 h-4" />} text="Job Matcher" />
               <QuickLink to="/app/settings" icon={<Target className="w-4 h-4" />} text="Settings" />
             </div>
           </div>
