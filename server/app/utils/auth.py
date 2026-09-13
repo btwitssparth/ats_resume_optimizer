@@ -1,4 +1,5 @@
 import os
+import logging
 from functools import wraps
 from flask import jsonify, request
 from clerk_backend_api import Clerk
@@ -7,6 +8,7 @@ from ..extensions import db
 from ..models import User
 
 _clerk_sdk = None
+logger = logging.getLogger(__name__)
 
 def get_clerk_sdk():
     global _clerk_sdk
@@ -45,7 +47,8 @@ def login_required(view):
                 db.session.commit()
             request.current_user = user
             return view(*args, **kwargs)
-        except Exception:
+        except Exception as exc:
             db.session.rollback()
+            logger.exception("Authentication failed for %s %s", request.method, request.path)
             return jsonify({"error": "Authentication service unavailable"}), 503
     return decorated_function
