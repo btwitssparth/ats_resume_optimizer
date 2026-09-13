@@ -38,7 +38,7 @@ export default function Builder(){
   };
   const link=(label:string,url:string)=>{
     if(!url?.trim())return;
-    const clean=/^https?:\\/\\//i.test(url.trim())?url.trim():`https://${url.trim()}`;
+    const clean = url.trim().startsWith("http://") || url.trim().startsWith("https://") ? url.trim() : `https://${url.trim()}`;
     doc.setFont("helvetica","normal");doc.setFontSize(8);ensure(11);doc.textWithLink(label,left,y,{url:clean});y+=11;
   };
   const heading=(value:string)=>{ensure(24);y+=7;doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text(value.toUpperCase(),left,y);doc.setLineWidth(.5);doc.line(left,y+3,left+maxWidth,y+3);y+=14};
