@@ -28,23 +28,33 @@ export default function Builder(){
  const save=async()=>{const validationError=validate();if(validationError){setError(validationError);setSection("personal");return}setSaving(true);setError(null);try{const token=await getToken();if(!token)throw new Error("Please sign in again.");const payload={name:data.name||"Untitled Resume",template:"ats-classic",data:data as unknown as Record<string,unknown>};const result=resumeId?await updateBuilderResume(token,resumeId,payload):await createBuilderResume(token,payload);setResumeId(result.id);await loadResumes();setDirty(false);setSaved(true);setTimeout(()=>setSaved(false),1600)}catch(e){setError(e instanceof ApiError?e.message:e instanceof Error?e.message:"Could not save resume.")}finally{setSaving(false)}};
  const download=()=>{
   const doc=new jsPDF({unit:"pt",format:"a4"});
-  const left=42,right=553,maxWidth=511; let y=46;
-  const text=(value:string,size=9,bold=false,spacing=12)=>{
-    doc.setFont("helvetica",bold?"bold":"normal"); doc.setFontSize(size);
-    const lines=doc.splitTextToSize(value||"",maxWidth) as string[];
-    if(y+lines.length*spacing>790){doc.addPage();y=46}
-    doc.text(lines,left,y); y+=lines.length*spacing;
+  const left=42,maxWidth=511,bottom=770; let y=46;
+  const ensure=(height:number)=>{if(y+height>bottom){doc.addPage();y=46}};
+  const write=(value:string,size=9,bold=false,spacing=12)=>{
+    if(!value?.trim())return;
+    doc.setFont("helvetica",bold?"bold":"normal");doc.setFontSize(size);
+    const lines=doc.splitTextToSize(value.trim(),maxWidth) as string[];
+    ensure(Math.max(spacing,lines.length*spacing));doc.text(lines,left,y);y+=lines.length*spacing;
   };
-  const heading=(value:string)=>{if(y>750){doc.addPage();y=46} doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text(value.toUpperCase(),left,y);doc.line(left,y+3,right,y+3);y+=18};
-  text(data.name||"Your Name",18,true,20); text(data.title||"Professional Title",11,false,15);
-  const contact=[data.email,data.phone,data.location,data.website,data.linkedin].filter(Boolean).join(" • "); if(contact) text(contact,8,false,11); y+=6;
-  if(data.summary){heading("Summary");text(data.summary,9,false,12);y+=4}
-  if(data.experience.length){heading("Experience");data.experience.forEach(e=>{text([e.role,e.company].filter(Boolean).join(" — "),9,true,12);text([e.start,e.end].filter(Boolean).join(" — "),8,false,10);e.bullets.filter(Boolean).forEach(b=>text("• "+b,8,false,11));y+=4})}
-  if(data.projects.length){heading("Projects");data.projects.forEach(p=>{text(p.name||"Project",9,true,12);if(p.technologies)text(p.technologies,8,false,10);if(p.description)text(p.description,8,false,11);y+=4})}
-  if(data.education.length){heading("Education");data.education.forEach(e=>{text(e.school||"School",9,true,12);text([e.degree,e.field].filter(Boolean).join(" in "),8,false,11);text([e.start,e.end].filter(Boolean).join(" — "),8,false,10);y+=4})}
-  if(data.skills.length){heading("Skills");text(data.skills.join(" • "),8,false,11)}
-  if(data.achievements.length){heading("Achievements");data.achievements.forEach(a=>text("• "+a,8,false,11))}
-  doc.save((data.name||"resume").replace(/[^a-z0-9]+/gi,"_").replace(/^_|_$/g,"")+"_Resume.pdf");
+  const link=(label:string,url:string)=>{
+    if(!url?.trim())return;
+    const clean=/^https?:\\/\\//i.test(url.trim())?url.trim():`https://${url.trim()}`;
+    doc.setFont("helvetica","normal");doc.setFontSize(8);ensure(11);doc.textWithLink(label,left,y,{url:clean});y+=11;
+  };
+  const heading=(value:string)=>{ensure(24);y+=7;doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text(value.toUpperCase(),left,y);doc.setLineWidth(.5);doc.line(left,y+3,left+maxWidth,y+3);y+=14};
+  write(data.name,18,true,20);
+  write(data.title,11,true,14);
+  const contacts=[data.email,data.phone,data.location].filter(Boolean).join(" • ");write(contacts,8,false,11);
+  if(data.website)link("Website: "+data.website,data.website);
+  if(data.linkedin)link("LinkedIn: "+data.linkedin,data.linkedin);
+  if(data.summary){heading("Summary");write(data.summary,8,false,11)}
+  if(data.experience.some(e=>e.role||e.company||e.bullets.some(Boolean))){heading("Experience");data.experience.forEach(e=>{write([e.role,e.company].filter(Boolean).join(" — "),9,true,12);write([e.location,[e.start,e.end].filter(Boolean).join(" — ")].filter(Boolean).join(" • "),8,false,11);e.bullets.filter(Boolean).forEach(b=>write("• "+b,8,false,11))})}
+  if(data.projects.some(p=>p.name||p.description||p.technologies)){heading("Projects");data.projects.forEach(p=>{write(p.name,9,true,12);if(p.technologies)write("Technologies: "+p.technologies,8,false,11);if(p.description)write(p.description,8,false,11);if(p.link)link("Project: "+p.link,p.link)})}
+  if(data.education.some(e=>e.school||e.degree||e.field)){heading("Education");data.education.forEach(e=>{write(e.school,9,true,12);write([e.degree,e.field].filter(Boolean).join(" — "),8,false,11);write([e.start,e.end].filter(Boolean).join(" — "),8,false,11)})}
+  if(data.skills.length){heading("Skills");write(data.skills.join(" • "),8,false,11)}
+  if(data.achievements.length){heading("Achievements");data.achievements.filter(Boolean).forEach(a=>write("• "+a,8,false,11))}
+  const filename=(data.name||"Resume").trim().replace(/[^a-z0-9]+/gi,"_").replace(/^_|_$/g,"")||"Resume";
+  doc.save(`${filename}_Resume.pdf`);
  };
  useEffect(()=>{let active=true;(async()=>{try{const token=await getToken();if(!token)return;const items=await listBuilderResumes(token);if(active){setResumes(items);const result=items[0];if(result){setResumeId(result.id);setData(normalizeData(result.data));setDirty(false)}}}catch(e){if(active)setError(e instanceof ApiError?e.message:"Could not load your saved resume.")}finally{if(active)setLoading(false)}})();return()=>{active=false}},[getToken]);
  useEffect(()=>{const handler=(event:BeforeUnloadEvent)=>{if(dirty){event.preventDefault();event.returnValue=""}};window.addEventListener("beforeunload",handler);return()=>window.removeEventListener("beforeunload",handler)},[dirty]);
