@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { jsPDF } from "jspdf";
 import { useAuth } from "@clerk/clerk-react";
-import { ApiError, createBuilderResume, deleteBuilderResume, getBuilderResume, listBuilderResumes, updateBuilderResume } from "../services/api";
+import { ApiError, BuilderResumeDTO, createBuilderResume, deleteBuilderResume, getBuilderResume, listBuilderResumes, updateBuilderResume } from "../services/api";
 import { Plus, Trash2, Save, Eye, User, Briefcase, GraduationCap, Code2, FileText, Award, Loader2 } from "lucide-react";
 
 
@@ -16,13 +16,16 @@ const uid=()=>Math.random().toString(36).slice(2,9);
 export default function Builder(){
  const {getToken}=useAuth();
  const [data,setData]=useState<ResumeData>(blank); const [resumeId,setResumeId]=useState<number|null>(null); const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [error,setError]=useState<string|null>(null);
- const [section,setSection]=useState("personal"); const [preview,setPreview]=useState(false); const [saved,setSaved]=useState(false); const [resumes,setResumes]=useState<any[]>([]);
- const update=(key:keyof ResumeData,value:any)=>setData(d=>({...d,[key]:value}));
+ const [section,setSection]=useState("personal"); const [preview,setPreview]=useState(false); const [saved,setSaved]=useState(false); const [dirty,setDirty]=useState(false); const [resumes,setResumes]=useState<BuilderResumeDTO[]>([]);
+ const update=(key:keyof ResumeData,value:any)=>{setData(d=>({...d,[key]:value}));setDirty(true);setSaved(false)};
+ const normalizeData=(raw:unknown):ResumeData=>{const d=(raw&&typeof raw==="object"?raw:{}) as Partial<ResumeData>;return {...blank,...d,skills:Array.isArray(d.skills)?d.skills.filter((x):x is string=>typeof x==="string"):[],experience:Array.isArray(d.experience)?d.experience:[],education:Array.isArray(d.education)?d.education:[],projects:Array.isArray(d.projects)?d.projects:[],achievements:Array.isArray(d.achievements)?d.achievements.filter((x):x is string=>typeof x==="string"):[]}};
+ const validate=():string|null=>{if(!data.name.trim())return "Please enter your full name.";if(!data.email.trim())return "Please enter your email address.";if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(data.email.trim()))return "Please enter a valid email address.";return null};
+ const confirmDiscard=()=>!dirty||window.confirm("You have unsaved changes. Discard them?");
  const loadResumes=async()=>{const token=await getToken();if(!token)return;const items=await listBuilderResumes(token);setResumes(items);return items};
- const newResume=()=>{setResumeId(null);setData(blank);setSection("personal");setSaved(false);setError(null)};
- const selectResume=async(id:number)=>{try{const token=await getToken();if(!token)return;const result=await getBuilderResume(token,id);setResumeId(result.id);setData(result.data as ResumeData);setError(null)}catch(e){setError(e instanceof ApiError?e.message:"Could not load resume.")}};
- const removeResume=async()=>{if(resumeId===null)return;if(!window.confirm("Delete this resume permanently?"))return;try{const token=await getToken();if(!token)return;await deleteBuilderResume(token,resumeId);const items=await loadResumes();if(items?.length){setResumeId(items[0].id);setData(items[0].data as ResumeData)}else newResume()}catch(e){setError(e instanceof ApiError?e.message:"Could not delete resume.")}};
- const save=async()=>{setSaving(true);setError(null);try{const token=await getToken();if(!token)throw new Error("Please sign in again.");const payload={name:data.name||"Untitled Resume",template:"ats-classic",data:data as unknown as Record<string,unknown>};const result=resumeId?await updateBuilderResume(token,resumeId,payload):await createBuilderResume(token,payload);setResumeId(result.id);await loadResumes();setSaved(true);setTimeout(()=>setSaved(false),1600)}catch(e){setError(e instanceof ApiError?e.message:e instanceof Error?e.message:"Could not save resume.")}finally{setSaving(false)}};
+ const newResume=()=>{if(!confirmDiscard())return;setResumeId(null);setData(blank);setSection("personal");setSaved(false);setDirty(false);setError(null)};
+ const selectResume=async(id:number)=>{if(!confirmDiscard())return;try{const token=await getToken();if(!token)return;const result=await getBuilderResume(token,id);setResumeId(result.id);setData(normalizeData(result.data));setDirty(false);setSaved(false);setError(null)}catch(e){setError(e instanceof ApiError?e.message:"Could not load resume.")}};
+ const removeResume=async()=>{if(resumeId===null)return;if(!window.confirm("Delete this resume permanently?"))return;try{const token=await getToken();if(!token)return;await deleteBuilderResume(token,resumeId);const items=await loadResumes();if(items?.length){setResumeId(items[0].id);setData(normalizeData(items[0].data));setDirty(false)}else {setResumeId(null);setData(blank);setDirty(false)}}catch(e){setError(e instanceof ApiError?e.message:"Could not delete resume.")}};
+ const save=async()=>{const validationError=validate();if(validationError){setError(validationError);setSection("personal");return}setSaving(true);setError(null);try{const token=await getToken();if(!token)throw new Error("Please sign in again.");const payload={name:data.name||"Untitled Resume",template:"ats-classic",data:data as unknown as Record<string,unknown>};const result=resumeId?await updateBuilderResume(token,resumeId,payload):await createBuilderResume(token,payload);setResumeId(result.id);await loadResumes();setDirty(false);setSaved(true);setTimeout(()=>setSaved(false),1600)}catch(e){setError(e instanceof ApiError?e.message:e instanceof Error?e.message:"Could not save resume.")}finally{setSaving(false)}};
  const download=()=>{
   const doc=new jsPDF({unit:"pt",format:"a4"});
   const left=42,right=553,maxWidth=511; let y=46;
@@ -43,7 +46,8 @@ export default function Builder(){
   if(data.achievements.length){heading("Achievements");data.achievements.forEach(a=>text("• "+a,8,false,11))}
   doc.save((data.name||"resume").replace(/[^a-z0-9]+/gi,"_").replace(/^_|_$/g,"")+"_Resume.pdf");
  };
- useEffect(()=>{let active=true;(async()=>{try{const token=await getToken();if(!token)return;const items=await listBuilderResumes(token);if(active){setResumes(items);const result=items[0];if(result){setResumeId(result.id);setData(result.data as ResumeData)}}}catch(e){if(active)setError(e instanceof ApiError?e.message:"Could not load your saved resume.")}finally{if(active)setLoading(false)}})();return()=>{active=false}},[getToken]);
+ useEffect(()=>{let active=true;(async()=>{try{const token=await getToken();if(!token)return;const items=await listBuilderResumes(token);if(active){setResumes(items);const result=items[0];if(result){setResumeId(result.id);setData(normalizeData(result.data));setDirty(false)}}}catch(e){if(active)setError(e instanceof ApiError?e.message:"Could not load your saved resume.")}finally{if(active)setLoading(false)}})();return()=>{active=false}},[getToken]);
+ useEffect(()=>{const handler=(event:BeforeUnloadEvent)=>{if(dirty){event.preventDefault();event.returnValue=""}};window.addEventListener("beforeunload",handler);return()=>window.removeEventListener("beforeunload",handler)},[dirty]);
  const addExp=()=>update("experience",[...data.experience,{id:uid(),role:"",company:"",location:"",start:"",end:"Present",bullets:[""]}]);
  const addEdu=()=>update("education",[...data.education,{id:uid(),school:"",degree:"",field:"",start:"",end:""}]);
  const addProject=()=>update("projects",[...data.projects,{id:uid(),name:"",link:"",description:"",technologies:""}]);
@@ -61,7 +65,7 @@ export default function Builder(){
 </div>
 <div className="flex items-end justify-between gap-4 mb-6">
     <div><p className="text-xs uppercase tracking-wider text-[#6f7480] mb-2">Resume workspace</p><h1 className="text-2xl font-bold text-[#f5f5f7]">Resume Builder</h1><p className="text-sm text-[#8a8f98] mt-1">Create an ATS-friendly resume with a live preview.</p></div>
-    <div className="flex gap-2"><button onClick={()=>setPreview(!preview)} className="lg:hidden px-3 py-2 rounded-lg border border-[#23232a] bg-[#111114] text-[#d1d5db] text-sm flex items-center gap-2"><Eye className="w-4 h-4"/>{preview?"Edit":"Preview"}</button><button onClick={download} className="px-4 py-2 rounded-lg border border-[#23232a] bg-[#111114] text-[#d1d5db] text-sm font-semibold mr-2">Download PDF</button><button onClick={save} disabled={saving} className="px-4 py-2 rounded-lg bg-[#5b8def] disabled:opacity-60 hover:bg-[#4f7df6] text-white text-sm font-semibold flex items-center gap-2"><Save className="w-4 h-4"/>{saving?"Saving...":saved?"Saved":"Save Resume"}</button></div>
+    <div className="flex gap-2"><button onClick={()=>setPreview(!preview)} className="lg:hidden px-3 py-2 rounded-lg border border-[#23232a] bg-[#111114] text-[#d1d5db] text-sm flex items-center gap-2"><Eye className="w-4 h-4"/>{preview?"Edit":"Preview"}</button><button onClick={download} className="px-4 py-2 rounded-lg border border-[#23232a] bg-[#111114] text-[#d1d5db] text-sm font-semibold mr-2">Download PDF</button><button onClick={save} disabled={saving} className="px-4 py-2 rounded-lg bg-[#5b8def] disabled:opacity-60 hover:bg-[#4f7df6] text-white text-sm font-semibold flex items-center gap-2"><Save className="w-4 h-4"/>{saving?"Saving...":saved?"Saved":dirty?"Save Resume":"Saved"}</button></div>
    </div>
    <div className="grid grid-cols-1 lg:grid-cols-[190px_minmax(0,1fr)_minmax(360px,0.85fr)] gap-4 items-start">
     {!preview&&<aside className="bg-[#111114] border border-[#23232a] rounded-xl p-2 lg:sticky lg:top-4">{sections.map(([id,label,Icon])=><button key={id} onClick={()=>setSection(id)} className={"w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left text-sm transition-colors "+(section===id?"bg-[#17192a] text-[#6d95ff]":"text-[#8a8f98] hover:text-white hover:bg-[#17171c]")}><Icon className="w-4 h-4"/>{label}</button>)}</aside>}
