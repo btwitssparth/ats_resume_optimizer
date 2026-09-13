@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { jsPDF } from "jspdf";
 import { useAuth } from "@clerk/clerk-react";
-import { ApiError, BuilderResumeDTO, createBuilderResume, deleteBuilderResume, getBuilderResume, listBuilderResumes, updateBuilderResume } from "../services/api";
+import { ApiError, createBuilderResume, deleteBuilderResume, getBuilderResume, listBuilderResumes, updateBuilderResume } from "../services/api";
 import { Plus, Trash2, Save, Eye, User, Briefcase, GraduationCap, Code2, FileText, Award, Loader2 } from "lucide-react";
 
 
@@ -16,7 +16,7 @@ const uid=()=>Math.random().toString(36).slice(2,9);
 export default function Builder(){
  const {getToken}=useAuth();
  const [data,setData]=useState<ResumeData>(blank); const [resumeId,setResumeId]=useState<number|null>(null); const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [error,setError]=useState<string|null>(null);
- const [section,setSection]=useState("personal"); const [preview,setPreview]=useState(false); const [saved,setSaved]=useState(false); const [dirty,setDirty]=useState(false); const [resumes,setResumes]=useState<BuilderResumeDTO[]>([]);
+ const [section,setSection]=useState("personal"); const [preview,setPreview]=useState(false); const [saved,setSaved]=useState(false); const [dirty,setDirty]=useState(false); const [resumes,setResumes]=useState<Array<{id:number;name:string;template:string;data:Record<string,unknown>;created_at:string;updated_at:string}>>([]);
  const update=(key:keyof ResumeData,value:any)=>{setData(d=>({...d,[key]:value}));setDirty(true);setSaved(false)};
  const normalizeData=(raw:unknown):ResumeData=>{const d=(raw&&typeof raw==="object"?raw:{}) as Partial<ResumeData>;return {...blank,...d,skills:Array.isArray(d.skills)?d.skills.filter((x):x is string=>typeof x==="string"):[],experience:Array.isArray(d.experience)?d.experience:[],education:Array.isArray(d.education)?d.education:[],projects:Array.isArray(d.projects)?d.projects:[],achievements:Array.isArray(d.achievements)?d.achievements.filter((x):x is string=>typeof x==="string"):[]}};
  const validate=():string|null=>{if(!data.name.trim())return "Please enter your full name.";if(!data.email.trim())return "Please enter your email address.";if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim()))return "Please enter a valid email address.";return null};
