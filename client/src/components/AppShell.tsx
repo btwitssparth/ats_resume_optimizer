@@ -2,8 +2,7 @@ import { UserButton } from "@clerk/clerk-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom"; // <-- ADDED REACT ROUTER
 import {
-  LayoutDashboard, FileSearch, ScrollText, GitCommit, Target, 
-  History, Settings as SettingsIcon, Menu, PanelLeftClose, PanelLeft, 
+  LayoutDashboard, FileSearch, ScrollText, History, Settings as SettingsIcon, Menu, PanelLeftClose, PanelLeft, 
   ChevronRight, MoreHorizontal
 } from "lucide-react";
 import { useApp } from "../contexts/AppContext";
@@ -18,14 +17,12 @@ interface NavItem {
 const primaryNav: NavItem[] = [
   { path: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/app/resume/analyzer", label: "Analyzer", icon: FileSearch },
-  { path: "/app/matcher", label: "Matcher", icon: Target },
   { path: "/app/history", label: "History", icon: History },
 ];
 
 const resumeGroup: NavItem[] = [
   { path: "/app/resume/analyzer", label: "Analyzer", icon: FileSearch },
   { path: "/app/resume/builder", label: "Builder", icon: ScrollText },
-  { path: "/app/resume/versions", label: "Versions", icon: GitCommit },
 ];
 
 const settingsNav: NavItem[] = [
@@ -35,13 +32,11 @@ const settingsNav: NavItem[] = [
 const bottomNav: NavItem[] = [
   { path: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/app/resume/analyzer", label: "Analyzer", icon: FileSearch },
-  { path: "/app/matcher", label: "Matcher", icon: Target },
   { path: "/app/history", label: "History", icon: History },
 ];
 
 const moreNav: NavItem[] = [
   { path: "/app/resume/builder", label: "Builder", icon: ScrollText },
-  { path: "/app/resume/versions", label: "Versions", icon: GitCommit },
   { path: "/app/settings", label: "Settings", icon: SettingsIcon },
 ];
 
@@ -101,7 +96,6 @@ function Sidebar({ collapsed }: { collapsed: boolean }) {
 
       <div className="px-3 pt-3 flex flex-col gap-0.5">
         <NavLink item={primaryNav[2]} collapsed={collapsed} />
-        <NavLink item={primaryNav[3]} collapsed={collapsed} />
       </div>
 
       <div className="mt-auto px-3 pt-3">
