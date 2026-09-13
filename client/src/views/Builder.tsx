@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { useRef } from "react";
-import { Plus, Trash2, Save, Eye, User, Briefcase, GraduationCap, Code2, FileText, Award } from "lucide-react";
+import { useAuth } from "@clerk/clerk-react";
+import { ApiError, createBuilderResume, getBuilderResume, updateBuilderResume } from "../services/api";
+import { Plus, Trash2, Save, Eye, User, Briefcase, GraduationCap, Code2, FileText, Award, Loader2 } from "lucide-react";
+
 
 type Experience={id:string;role:string;company:string;location:string;start:string;end:string;bullets:string[]};
 type Education={id:string;school:string;degree:string;field:string;start:string;end:string};
@@ -11,23 +13,25 @@ const blank:ResumeData={name:"",title:"",email:"",phone:"",location:"",website:"
 const uid=()=>Math.random().toString(36).slice(2,9);
 
 export default function Builder(){
- const [data,setData]=useState<ResumeData>(blank);
+ const {getToken}=useAuth();
+ const [data,setData]=useState<ResumeData>(blank); const [resumeId,setResumeId]=useState<number|null>(null); const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [error,setError]=useState<string|null>(null);
  const [section,setSection]=useState("personal"); const [preview,setPreview]=useState(false); const [saved,setSaved]=useState(false);
  const update=(key:keyof ResumeData,value:any)=>setData(d=>({...d,[key]:value}));
- const save=()=>{setSaved(true);setTimeout(()=>setSaved(false),1600)};
- const download=()=>{window.print()};
+ const save=async()=>{setSaving(true);setError(null);try{const token=await getToken();if(!token)throw new Error("Please sign in again.");const payload={name:data.name||"Untitled Resume",template:"ats-classic",data:data as unknown as Record<string,unknown>};const result=resumeId?await updateBuilderResume(token,resumeId,payload):await createBuilderResume(token,payload);setResumeId(result.id);setSaved(true);setTimeout(()=>setSaved(false),1600)}catch(e){setError(e instanceof ApiError?e.message:e instanceof Error?e.message:"Could not save resume.")}finally{setSaving(false)}};
+ const download=()=>window.print();
+ useEffect(()=>{let active=true;(async()=>{try{const token=await getToken();if(!token)return;const result=await getBuilderResume(token);if(active&&result){setResumeId(result.id);setData(result.data as ResumeData)}}catch(e){if(active)setError(e instanceof ApiError?e.message:"Could not load your saved resume.")}finally{if(active)setLoading(false)}})();return()=>{active=false}},[getToken]);
  const sections=[["personal","Personal Information",User],["summary","Summary",FileText],["experience","Experience",Briefcase],["education","Education",GraduationCap],["projects","Projects",Code2],["skills","Skills",FileText],["achievements","Achievements",Award]] as const;
  const addExp=()=>update("experience",[...data.experience,{id:uid(),role:"",company:"",location:"",start:"",end:"Present",bullets:[""]}]);
  const addEdu=()=>update("education",[...data.education,{id:uid(),school:"",degree:"",field:"",start:"",end:""}]);
  const addProject=()=>update("projects",[...data.projects,{id:uid(),name:"",link:"",description:"",technologies:""}]);
- return <div className="w-full py-2 sm:py-4">
-  <div className="flex items-end justify-between gap-4 mb-6"><div><p className="text-xs uppercase tracking-wider text-[#6f7480] mb-2">Resume workspace</p><h1 className="text-2xl font-bold text-[#f5f5f7]">Resume Builder</h1><p className="text-sm text-[#8a8f98] mt-1">Create an ATS-friendly resume with a live preview.</p></div><div className="flex gap-2"><button onClick={()=>setPreview(!preview)} className="lg:hidden px-3 py-2 rounded-lg border border-[#23232a] bg-[#111114] text-[#d1d5db] text-sm flex items-center gap-2"><Eye className="w-4 h-4"/>{preview?"Edit":"Preview"}</button><button onClick={download} className="px-4 py-2 rounded-lg border border-[#23232a] bg-[#111114] text-[#d1d5db] text-sm font-semibold mr-2">Download PDF</button><button onClick={save} className="px-4 py-2 rounded-lg bg-[#5b8def] hover:bg-[#4f7df6] text-white text-sm font-semibold flex items-center gap-2"><Save className="w-4 h-4"/>{saved?"Saved":"Save Draft"}</button></div></div>
+ return <div className="w-full py-2 sm:py-4">{loading?<div className="min-h-[400px] flex items-center justify-center text-[#8a8f98]"><Loader2 className="w-5 h-5 animate-spin mr-2"/>Loading your resume...</div>:<>{error&&<div className="mb-4 rounded-lg border border-rose-900/50 bg-rose-950/20 px-4 py-3 text-sm text-rose-300">{error}</div>}
+  <div className="flex items-end justify-between gap-4 mb-6"><div><p className="text-xs uppercase tracking-wider text-[#6f7480] mb-2">Resume workspace</p><h1 className="text-2xl font-bold text-[#f5f5f7]">Resume Builder</h1><p className="text-sm text-[#8a8f98] mt-1">Create an ATS-friendly resume with a live preview.</p></div><div className="flex gap-2"><button onClick={()=>setPreview(!preview)} className="lg:hidden px-3 py-2 rounded-lg border border-[#23232a] bg-[#111114] text-[#d1d5db] text-sm flex items-center gap-2"><Eye className="w-4 h-4"/>{preview?"Edit":"Preview"}</button><button onClick={download} className="px-4 py-2 rounded-lg border border-[#23232a] bg-[#111114] text-[#d1d5db] text-sm font-semibold mr-2">Download PDF</button><button onClick={save} disabled={saving} className="px-4 py-2 rounded-lg bg-[#5b8def] disabled:opacity-60 hover:bg-[#4f7df6] text-white text-sm font-semibold flex items-center gap-2"><Save className="w-4 h-4"/>{saving?"Saving...":saved?"Saved":"Save Resume"}</button></div></div>
   <div className="grid grid-cols-1 lg:grid-cols-[190px_minmax(0,1fr)_minmax(360px,0.85fr)] gap-4 items-start">
    {!preview&&<aside className="bg-[#111114] border border-[#23232a] rounded-xl p-2 lg:sticky lg:top-4">{sections.map(([id,label,Icon])=><button key={id} onClick={()=>setSection(id)} className={"w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left text-sm transition-colors "+(section===id?"bg-[#17192a] text-[#6d95ff]":"text-[#8a8f98] hover:text-white hover:bg-[#17171c]")}><Icon className="w-4 h-4"/>{label}</button>)}</aside>}
    {!preview&&<Editor section={section} data={data} update={update} addExp={addExp} addEdu={addEdu} addProject={addProject}/>}
    <Preview data={data}/>
   </div>
- </div>
+ </div></>}
 }
 
 function Field({label,value,onChange,placeholder=""}:{label:string;value:string;onChange:(v:string)=>void;placeholder?:string}){return <label className="block"><span className="block text-xs font-medium text-[#8a8f98] mb-1.5">{label}</span><input value={value} placeholder={placeholder} onChange={e=>onChange(e.target.value)} className="w-full rounded-lg border border-[#2a2a32] bg-[#0d0d10] px-3 py-2.5 text-sm text-[#f5f5f7] placeholder:text-[#565b66] focus:border-[#5b8def] outline-none"/></label>}
