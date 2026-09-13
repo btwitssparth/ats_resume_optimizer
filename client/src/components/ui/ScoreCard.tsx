@@ -72,24 +72,24 @@ export default function ScoreCard({
 
   const containerClass =
     size === "lg"
-      ? "bg-white border border-slate-200 rounded-2xl p-8 flex flex-col items-center justify-center gap-5"
-      : "bg-white border border-slate-200 rounded-xl p-5 flex items-center gap-4";
+      ? "bg-[#111114] border border-[#23232a] rounded-2xl p-8 flex flex-col items-center justify-center gap-5"
+      : "bg-[#111114] border border-[#23232a] rounded-xl p-5 flex items-center gap-4";
 
   const ringWrapperClass =
     size === "lg" ? "relative w-36 h-36 flex-shrink-0" : "relative w-24 h-24 flex-shrink-0";
 
   const scoreTextClass =
     size === "lg"
-      ? "text-5xl font-bold text-slate-900 font-mono tracking-tight animate-number"
-      : "text-2xl font-bold text-slate-900 font-mono tracking-tight animate-number";
+      ? "text-5xl font-bold text-[#f5f5f7] font-mono tracking-tight animate-number"
+      : "text-2xl font-bold text-[#f5f5f7] font-mono tracking-tight animate-number";
 
   const labelClass =
     size === "lg"
-      ? "text-base font-semibold text-slate-900 tracking-tight"
-      : "text-sm font-semibold text-slate-900 tracking-tight";
+      ? "text-base font-semibold text-[#f5f5f7] tracking-tight"
+      : "text-sm font-semibold text-[#f5f5f7] tracking-tight";
 
   const subtitleClass =
-    size === "lg" ? "text-sm text-slate-400" : "text-xs text-slate-400";
+    size === "lg" ? "text-sm text-[#6f7480]" : "text-xs text-[#6f7480]";
 
   return (
     <div className={containerClass}>
@@ -121,7 +121,7 @@ export default function ScoreCard({
         <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
           <span className={scoreTextClass}>{display}</span>
           {size === "lg" && (
-            <span className="text-sm text-slate-400 font-medium font-mono mt-1">
+            <span className="text-sm text-[#6f7480] font-medium font-mono mt-1">
               /100
             </span>
           )}
