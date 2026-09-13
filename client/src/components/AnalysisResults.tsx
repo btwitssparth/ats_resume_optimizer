@@ -130,22 +130,22 @@ export default function AnalysisResults({
       initial={{ opacity: 0, x: 16 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="bg-[#141416] p-6 sm:p-7 lg:p-8 rounded-2xl border border-[#23232a]"
+      className="bg-white p-6 sm:p-7 lg:p-8 rounded-2xl border border-slate-200"
     >
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="show"
-        className="flex items-center justify-between mb-7 pb-6 border-b border-[#1f1f26]"
+        className="flex items-center justify-between mb-7 pb-6 border-b border-slate-200"
       >
         <motion.div variants={itemVariants}>
-          <h2 className="text-[15px] font-semibold text-[#f5f5f7] flex items-center gap-2 tracking-tight">
-            <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-[#1c1a10] border border-[#3a3420]">
+          <h2 className="text-[15px] font-semibold text-slate-900 flex items-center gap-2 tracking-tight">
+            <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 border border-amber-200">
               <Sparkles className="w-3.5 h-3.5 text-[#f5c95b]" />
             </span>
             AI Insights
           </h2>
-          <p className="text-xs text-[#6b7280] mt-1.5">
+          <p className="text-xs text-slate-400 mt-1.5">
             Based on the provided job description.
           </p>
         </motion.div>
@@ -153,14 +153,14 @@ export default function AnalysisResults({
         <motion.div variants={itemVariants} className="flex items-center gap-4">
           <div className="flex flex-col items-end">
             <div className="flex items-baseline gap-0.5">
-              <span className="text-2xl sm:text-3xl font-bold text-[#f5f5f7] animate-number font-mono tracking-tight">
+              <span className="text-2xl sm:text-3xl font-bold text-slate-900 animate-number font-mono tracking-tight">
                 <AnimatedScore value={score} />
               </span>
-              <span className="text-sm text-[#4f545e] font-medium font-mono">
+              <span className="text-sm text-slate-400 font-medium font-mono">
                 /100
               </span>
             </div>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#565b66] mt-1">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400 mt-1">
               Match Score
             </span>
           </div>
@@ -176,17 +176,17 @@ export default function AnalysisResults({
       >
         <motion.div variants={itemVariants}>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-[13.5px] text-[#d8dbe3] flex items-center gap-2 tracking-tight">
+            <h3 className="font-semibold text-[13.5px] text-slate-700 flex items-center gap-2 tracking-tight">
               <AlertTriangle className="w-4 h-4 text-[#f88585]" />
               Missing Keywords
             </h3>
-            <span className="text-[10.5px] font-mono text-[#565b66] bg-[#101013] px-2 py-0.5 rounded-md border border-[#1f1f26]">
+            <span className="text-[10.5px] font-mono text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200">
               {missingKeywords.length}
             </span>
           </div>
 
           {missingKeywords.length === 0 ? (
-            <div className="text-sm text-[#6b7280] bg-[#101013] rounded-xl border border-[#1f1f26] px-4 py-3">
+            <div className="text-sm text-slate-400 bg-slate-50 rounded-xl border border-slate-200 px-4 py-3">
               No critical keywords detected as missing.
             </div>
           ) : (
@@ -213,7 +213,7 @@ export default function AnalysisResults({
 
         <motion.div variants={itemVariants}>
           <div className="flex items-center justify-between mb-2.5">
-            <h3 className="font-semibold text-[13.5px] text-[#d8dbe3] flex items-center gap-2 tracking-tight">
+            <h3 className="font-semibold text-[13.5px] text-slate-700 flex items-center gap-2 tracking-tight">
               <CheckSquare className="w-4 h-4 text-[#72e4a2]" />
               Suggested Improvements
             </h3>
@@ -223,12 +223,12 @@ export default function AnalysisResults({
               </span>
             )}
           </div>
-          <p className="text-xs text-[#565b66] mb-4">
+          <p className="text-xs text-slate-400 mb-4">
             Select the enhancements you want applied to your resume.
           </p>
 
           {suggestedEdits.length === 0 ? (
-            <div className="text-sm text-[#6b7280] bg-[#101013] rounded-xl border border-[#1f1f26] px-4 py-3">
+            <div className="text-sm text-slate-400 bg-slate-50 rounded-xl border border-slate-200 px-4 py-3">
               No specific edits suggested for this resume/job pair.
             </div>
           ) : (
@@ -249,7 +249,7 @@ export default function AnalysisResults({
                     className={`group flex items-start gap-3.5 p-4 rounded-xl cursor-pointer border transition-all duration-200 ${
                       isChecked
                         ? "bg-[#11152a] border-[#3a4a86]"
-                        : "bg-[#101013] border-[#23232a] hover:border-[#2f2f39] hover:bg-[#121216]"
+                        : "bg-slate-50 border-slate-200 hover:border-[#2f2f39] hover:bg-[#121216]"
                     }`}
                   >
                     <div className="relative flex-shrink-0 mt-0.5">
@@ -264,7 +264,7 @@ export default function AnalysisResults({
                         className={`w-4.5 h-4.5 rounded-[5px] border-2 flex items-center justify-center transition-all duration-200 ${
                           isChecked
                             ? "bg-[#5b8def] border-[#5b8def]"
-                            : "bg-[#141416] border-[#3f434c] group-hover:border-[#565b66]"
+                            : "bg-white border-[#3f434c] group-hover:border-[#565b66]"
                         }`}
                         style={{ width: "18px", height: "18px" }}
                       >
@@ -318,7 +318,7 @@ export default function AnalysisResults({
           transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
           className={`w-full flex justify-center items-center gap-2 py-3.5 px-4 rounded-xl font-semibold text-[14.5px] transition-all duration-200 border ${
             isRegenerating || acceptedEdits.length === 0
-              ? "bg-[#1a1a20] border-[#2a2a34] text-[#4f545e] cursor-not-allowed"
+              ? "bg-[#1a1a20] border-[#2a2a34] text-slate-400 cursor-not-allowed"
               : "bg-[#f5f5f7] border-transparent text-[#0a0a0b] hover:bg-white shadow-[0_1px_0_0_rgba(255,255,255,0.35)_inset,0_6px_20px_-10px_rgba(245,245,247,0.35)]"
           }`}
         >
