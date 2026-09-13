@@ -14,8 +14,8 @@ export default function Analyzer() {
   return (
     <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex-1 flex flex-col">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-slate-900">Resume Analyzer</h2>
-        <p className="text-sm text-slate-500 mt-1">Upload your resume and target job description to generate AI-driven insights and optimizations.</p>
+        <h2 className="text-2xl font-bold text-[#f5f5f7]">Resume Analyzer</h2>
+        <p className="text-sm text-[#8a8f98] mt-1">Upload your resume and target job description to generate AI-driven insights and optimizations.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pb-12">
@@ -46,13 +46,13 @@ export default function Analyzer() {
           {!result && !loading && !regeneratedText && (
             <motion.div 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              className="bg-white border border-slate-200 rounded-xl h-[500px] flex flex-col items-center justify-center text-slate-400 p-8 text-center shadow-sm"
+              className="bg-[#111114] border border-[#23232a] rounded-xl h-[500px] flex flex-col items-center justify-center text-[#6f7480] p-8 text-center shadow-sm"
             >
-              <div className="bg-slate-50 p-4 rounded-full mb-4 border border-slate-100">
-                <FileSearch className="w-8 h-8 text-slate-400" />
+              <div className="bg-[#151519] p-4 rounded-full mb-4 border border-[#1f1f26]">
+                <FileSearch className="w-8 h-8 text-[#6f7480]" />
               </div>
-              <h3 className="text-lg font-medium text-slate-900 mb-1">Awaiting Documents</h3>
-              <p className="text-sm text-slate-500 max-w-sm">Submit your resume and target job description on the left to begin the optimization process.</p>
+              <h3 className="text-lg font-medium text-[#f5f5f7] mb-1">Awaiting Documents</h3>
+              <p className="text-sm text-[#8a8f98] max-w-sm">Submit your resume and target job description on the left to begin the optimization process.</p>
             </motion.div>
           )}
         </div>
