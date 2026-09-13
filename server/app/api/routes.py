@@ -178,3 +178,25 @@ def update_builder_resume(resume_id):
 def list_builder_resumes():
     resumes = BuilderResume.query.filter_by(user_id=request.current_user.id).order_by(BuilderResume.updated_at.desc()).all()
     return jsonify([resume.to_dict() for resume in resumes]), 200
+
+@api_bp.get("/builder/resumes/<int:resume_id>")
+@login_required
+def get_builder_resume(resume_id):
+    resume = BuilderResume.query.filter_by(id=resume_id, user_id=request.current_user.id).first()
+    if resume is None:
+        return _error("Resume not found.", 404)
+    return jsonify(resume.to_dict()), 200
+
+@api_bp.delete("/builder/resumes/<int:resume_id>")
+@login_required
+def delete_builder_resume(resume_id):
+    resume = BuilderResume.query.filter_by(id=resume_id, user_id=request.current_user.id).first()
+    if resume is None:
+        return _error("Resume not found.", 404)
+    try:
+        db.session.delete(resume)
+        db.session.commit()
+        return jsonify({"message": "Resume deleted successfully."}), 200
+    except Exception:
+        db.session.rollback()
+        return _error("Could not delete resume. Please try again.", 500)
