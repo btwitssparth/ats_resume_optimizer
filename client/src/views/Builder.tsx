@@ -31,7 +31,7 @@ export default function Builder(){
    {!preview&&<Editor section={section} data={data} update={update} addExp={addExp} addEdu={addEdu} addProject={addProject}/>}
    <Preview data={data}/>
   </div>
- </div></>}
+ </div>}
 }
 
 function Field({label,value,onChange,placeholder=""}:{label:string;value:string;onChange:(v:string)=>void;placeholder?:string}){return <label className="block"><span className="block text-xs font-medium text-[#8a8f98] mb-1.5">{label}</span><input value={value} placeholder={placeholder} onChange={e=>onChange(e.target.value)} className="w-full rounded-lg border border-[#2a2a32] bg-[#0d0d10] px-3 py-2.5 text-sm text-[#f5f5f7] placeholder:text-[#565b66] focus:border-[#5b8def] outline-none"/></label>}
