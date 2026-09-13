@@ -17,6 +17,8 @@ def create_app():
     if os.getenv("TRUST_PROXY", "").lower() == "true":
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
     db.init_app(app)
+    with app.app_context():
+        db.create_all()
     from .api import api_bp
     app.register_blueprint(api_bp, url_prefix="/api")
     @app.errorhandler(413)
